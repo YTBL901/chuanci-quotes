@@ -2,10 +2,11 @@
 """
 串子语录采集脚本（多源版 · 内容去重 · 上限10000）
 ====================================================
-采集源：
-  1. 一言 API（v1.hitokoto.cn）—— 12 个分类，主源，稳定
-  2. vvhan 段子 API / qqsuu 笑话 API —— 补充源，失败自动跳过
-  3. 内置保底种子 20 条
+采集源（多源）：
+  1. 一言 API（v1.hitokoto.cn）—— 12 个分类，主源
+  2. 60s API —— 中文段子 / 发病文学 / KFC梗 / 冷笑话（最贴合串子风格），多实例容错
+  3. vvhan / qqsuu 段子接口 —— 补充，失败自动跳过
+  4. 内置保底种子 20 条
 核心修复：
   - 按「内容」去重（不再按 id），彻底消除重复语录
   - 加载旧数据时自动清理历史重复
@@ -40,7 +41,22 @@ HITOKOTO_MAP = {
     "j": ("职场", "贴吧"), "k": ("键政", "微博"), "l": ("电竞圈", "NGA"),
 }
 
-# 补充源（网络开放时生效，失败自动跳过）
+# 补充源：60s API 公共实例（已实测可用，失败自动跳过）
+# 每个实例都试一遍，任一可用即可；数据字段在 data.<key> 中
+SIXTY_BASES = [
+    "https://60s.okbaike.com",       # 实测可用
+    "https://api.cczo.cc/60s",       # 实测可用（备用）
+    "https://60s.viki.moe",          # 官方域名（GitHub 服务器可能可用）
+]
+# 端点 -> (本站分类, 来源标识, 数据字段名)
+SIXTY_ENDPOINTS = [
+    ("duanzi",   "互联网魔怔", "贴吧", "duanzi"),    # 网络段子
+    ("fabing",   "互联网魔怔", "微博", "saying"),    # 发病文学（魔怔发言，最贴合串子风格）
+    ("kfc",      "经典老串",   "微博", "kfc"),       # 疯狂星期四热梗
+    ("dad-joke", "互联网魔怔", "抖音", "content"),   # 冷笑话
+]
+
+# 旧补充源（保留兼容，失败自动跳过）
 EXTRA_SOURCES = [
     {"url": "https://api.vvhan.com/api/duanzi", "category": "互联网魔怔", "source": "段子站", "key": "data"},
     {"url": "https://api.qqsuu.cn/api/dm-joke", "category": "互联网魔怔", "source": "笑话站", "key": "content"},
@@ -169,8 +185,31 @@ def collect_hitokoto(data, keys, today):
     return added
 
 
+def collect_60s(data, keys, today):
+    """补充源：60s API（段子/发病文学/KFC梗/冷笑话），多实例容错"""
+    added = 0
+    for base in SIXTY_BASES:
+        for endpoint, category, source, field in SIXTY_ENDPOINTS:
+            url = f"{base}/v2/{endpoint}"
+            for _ in range(PER_SOURCE):
+                r = get(url, params={"_": random.randint(1, 10**9)})
+                if not r:
+                    break  # 该实例不通，换下一个
+                try:
+                    payload = r.json()
+                    if payload.get("code") != 200:
+                        break
+                    text = payload.get("data", {}).get(field, "")
+                except Exception:
+                    break
+                if add_item(data, keys, text, category, source, today):
+                    added += 1
+    print(f"[INFO] 60s系列新增 {added} 条")
+    return added
+
+
 def collect_extra(data, keys, today):
-    """补充源：其他段子/笑话接口，失败自动跳过"""
+    """旧补充源：其他段子/笑话接口，失败自动跳过"""
     added = 0
     for cfg in EXTRA_SOURCES:
         r = get(cfg["url"])
@@ -207,6 +246,7 @@ def main():
 
     # 2. 多源采集
     collect_hitokoto(data, keys, today)
+    collect_60s(data, keys, today)      # 段子/发病文学/KFC梗/冷笑话
     collect_extra(data, keys, today)
 
     # 3. 按日期排序，保留最新 MAX_ITEMS 条
