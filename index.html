@@ -3,156 +3,634 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>串子语录档案馆 - 收录网络经典魔怔语录</title>
-  <meta name="description" content="串子语录档案馆，收录各大网络平台经典串子发言与魔怔语录，支持分类浏览、搜索、每日更新。">
+  <title>串子语录档案馆 · AN ARCHIVE OF INTERNET ABSURDITY</title>
+  <meta name="description" content="串子语录档案馆——收录全网经典串子发言与魔怔语录。网络疯话证物档案，分类浏览、检索、每日更新。">
 
-  <!-- ========== Tailwind CSS v3 CDN ========== -->
+  <!-- ========== Tailwind CSS v3 CDN（保留原技术栈，仅用于布局） ========== -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      darkMode: 'class', // 使用 class 方式切换暗黑模式
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans SC', 'Microsoft YaHei', 'sans-serif'],
-          },
-        },
-      },
+      darkMode: 'class',
+      theme: { extend: {} },
     };
   </script>
 
-  <!-- ========== Font Awesome 图标 ========== -->
+  <!-- ========== 个性字体：Space Grotesk（标题）+ JetBrains Mono（编号/标签/数字） ==========
+       走 jsDelivr 的 Fontsource，国内可访问；加载失败也有系统等宽/黑体后备 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/space-grotesk@5.0.0/700.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.0/400.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.0/700.css">
+
+  <!-- ========== Font Awesome ========== -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- ========== 自定义样式 ========== -->
   <style>
-    /* ---- 全局过渡：所有交互动画统一 0.3s 平滑缓动 ---- */
-    * { transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important; }
+    /* ============================================================
+       设计系统：BRUTALIST "网络档案局"
+       —— 反 AI 平庸：无渐变、无圆角、无柔和阴影、无居中对称
+       —— 一切由 CSS 变量驱动，明暗两套都是"反色面板"作焦点
+       ============================================================ */
+    :root {
+      --paper:      #efece1;   /* 档案纸底色 */
+      --surface:    #f7f4ec;   /* 卡片/容器表面 */
+      --line:       #1a1a1a;   /* 硬边线 */
+      --ink:        #171614;   /* 主文字 */
+      --ink-soft:   #5b574f;   /* 次文字 */
+      --accent:     #d92d1a;   /* 警示朱红（印章/强调） */
+      --mark:       #f0c419;   /* 警示黄（胶带） */
+      /* 反色面板（背景=--ink）上的强调文字色：亮色模式黑底→警示黄，清晰 */
+      --onink:      #f0c419;
+      --grid:       rgba(23,22,20,.10);
 
-    /* ---- 主色调渐变：靛蓝 → 深紫 ---- */
-    .brand-gradient { background: linear-gradient(135deg, #4f46e5 0%, #6d28d9 55%, #7c3aed 100%); }
-    .brand-text-gradient {
-      background: linear-gradient(135deg, #4f46e5, #7c3aed);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
+      --display: 'Space Grotesk', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      --mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, 'Courier New', monospace;
+      --sans:    -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+    }
+    .dark {
+      --paper:      #111110;
+      --surface:    #191918;
+      --line:       #d8d3c4;
+      --ink:        #ece7da;
+      --ink-soft:   #999587;
+      --accent:     #ff4a2b;
+      --mark:       #c9ff2f;   /* 荧光绿，仅用于胶带装饰（不承载文字） */
+      /* 反色面板在暗黑下变成米白底，荧光绿字看不清 → 改用深朱红，对比度充足 */
+      --onink:      #b3150a;
+      --grid:       rgba(236,231,218,.075);
     }
 
-    /* ---- 隐藏滚动条但保留滚动功能（移动端菜单） ---- */
+    /* 全局：统一 0.3s 脆利落缓动 */
+    * { transition-timing-function: cubic-bezier(.2,.8,.2,1) !important; }
+
+    html { scroll-behavior: smooth; }
+    /* 兜底：杜绝任何横向溢出（sticky 导航相对视口，不受影响） */
+    html, body { overflow-x: hidden; }
+
+    /* 页面：点阵网格纹理，拒绝纯色背景 */
+    body.site-body {
+      margin: 0;
+      background-color: var(--paper);
+      background-image: radial-gradient(var(--grid) 1px, transparent 1px);
+      background-size: 22px 22px;
+      color: var(--ink);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---- 警示斜纹胶带：本站最具辨识度的记忆元素 ---- */
+    .hazard {
+      height: 10px;
+      background: repeating-linear-gradient(-45deg,
+        var(--ink) 0 9px, var(--mark) 9px 18px);
+    }
+    /* ---- 犯罪现场封锁带：黄黑警戒斜纹 + 中央封锁标牌 ---- */
+    .cordon {
+      position: relative;
+      height: 38px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-top: 2px solid #171614;
+      border-bottom: 2px solid #171614;
+      background: repeating-linear-gradient(-45deg,
+        #171614 0 16px, #f0c419 16px 32px);
+    }
+    .cordon-label {
+      position: relative;
+      z-index: 1;
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: .16em;
+      color: #171614;
+      background: #f0c419;
+      border: 2px solid #171614;
+      padding: 4px 14px;
+      white-space: nowrap;
+      box-shadow: 3px 3px 0 #171614;
+    }
+    /* 窄屏用更短的文字，避免封锁带标牌被裁切 */
+    .cordon-short { display: none; }
+    @media (max-width: 640px) {
+      .cordon-label { font-size: 9px; letter-spacing: .08em; padding: 4px 10px; }
+      .cordon-long { display: none; }
+      .cordon-short { display: inline; }
+    }
+    /* 反色面板上的胶带（面板背景是 --ink，故用 --paper 打底） */
+    .hazard-invert {
+      height: 10px;
+      background: repeating-linear-gradient(-45deg,
+        var(--paper) 0 9px, var(--accent) 9px 18px);
+    }
+
+    /* ---- 顶部导航：硬底 + 2px 实线，无模糊玻璃 ---- */
+    .topbar {
+      background: var(--paper);
+      border-bottom: 2px solid var(--line);
+    }
+    .logo-mark {
+      width: 34px; height: 34px;
+      background: var(--accent);
+      color: #fff;
+      border: 1.5px solid var(--line);
+      box-shadow: 3px 3px 0 var(--line);
+      display: grid; place-items: center;
+      flex-shrink: 0;
+    }
+    .brand-name {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 17px;
+      letter-spacing: -.02em;
+      color: var(--ink);
+      line-height: 1.05;
+    }
+    .brand-sub {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: .22em;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+    }
+    .search-input {
+      border: 1.5px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 8px 10px 8px 32px;
+      outline: none;
+      width: 100%;
+    }
+    .search-input::placeholder { color: var(--ink-soft); opacity: .8; }
+    .search-input:focus { box-shadow: 3px 3px 0 var(--accent); }
+    .nav-date {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-soft);
+      letter-spacing: .03em;
+      white-space: nowrap;
+    }
+    .icon-btn {
+      width: 34px; height: 34px;
+      border: 1.5px solid var(--line);
+      border-radius: 0;
+      background: var(--surface);
+      color: var(--ink);
+      display: grid; place-items: center;
+      cursor: pointer;
+    }
+    .icon-btn:hover { background: var(--ink); color: var(--paper); box-shadow: 3px 3px 0 var(--accent); }
+    .icon-btn:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* ---- 统计横幅：反色面板（亮=黑底/暗=米白底），永远是视觉焦点 ---- */
+    .hero-panel {
+      position: relative;
+      background: var(--ink);
+      color: var(--paper);
+      overflow: hidden;
+    }
+    .hero-panel::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,.055) 0 1px, transparent 1px 4px);
+    }
+    .hero-kicker {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+      color: var(--onink);
+      flex-wrap: wrap;      /* 窄屏可换行，避免撑破容器 */
+      min-width: 0;
+      word-break: break-word;
+    }
+    /* 横幅内 flex 子项允许收缩，防止长内容顶宽父容器 */
+    .hero-panel .flex > div { min-width: 0; }
+    /* "已归档"印章窄屏改为静态不旋转，减少视觉拥挤 */
+    @media (max-width: 640px) {
+      .hero-kicker { letter-spacing: .12em; font-size: 9px; }
+      .archive-stamp { transform: rotate(-4deg); }
+    }
+    .hero-title {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: clamp(28px, 5.4vw, 54px);
+      line-height: 1.06;
+      letter-spacing: -.035em;
+      margin: 0;
+    }
+    .hero-title em {
+      font-style: normal;
+      color: var(--accent);
+    }
+    .hero-desc {
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--paper);
+      opacity: .78;
+      max-width: 46ch;
+    }
+    /* 红色"已归档"印章，旋转的不对称元素 */
+    .archive-stamp {
+      border: 3px double var(--accent);
+      color: var(--accent);
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: .18em;
+      padding: 9px 14px;
+      transform: rotate(-9deg);
+      text-transform: uppercase;
+      white-space: nowrap;
+      opacity: .95;
+    }
+    .stat-cell {
+      border: 1px solid var(--paper);
+      padding: 12px 14px;
+      min-width: 0;
+      transition: transform .3s, box-shadow .3s;
+    }
+    .stat-cell:hover { transform: translate(-2px,-2px); box-shadow: 4px 4px 0 var(--mark); }
+    .stat-num {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: clamp(24px, 4.6vw, 40px);
+      line-height: 1;
+      color: var(--onink);
+    }
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      opacity: .72;
+      margin-top: 8px;
+    }
+
+    /* ---- 筛选区：硬边纸卡 ---- */
+    .filter-panel {
+      background: var(--surface);
+      border: 2px solid var(--line);
+      box-shadow: 6px 6px 0 var(--line);
+    }
+    .section-index {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .18em;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .panel-heading {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink);
+      font-weight: 700;
+    }
+    /* 分类标签：方角贴纸，选中反色 + 硬阴影 */
+    .chip {
+      border: 1.5px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 6px 13px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all .3s;
+    }
+    .chip:hover { background: var(--paper); transform: translate(-1px,-1px); box-shadow: 2px 2px 0 var(--line); }
+    .chip.chip-active { background: var(--ink); color: var(--paper); box-shadow: 3px 3px 0 var(--accent); }
+    /* 来源标签：选中朱红描边 */
+    .src-chip {
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      color: var(--ink-soft);
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 4px 10px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all .3s;
+    }
+    .src-chip:hover { color: var(--ink); border-color: var(--accent); }
+    .src-chip.src-chip-active { color: var(--accent); border: 2px solid var(--accent); font-weight: 700; }
+    .src-count { opacity: .6; }
+    /* 排序分段控件 */
+    .sort-btn {
+      border-radius: 0;
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 5px 12px;
+      color: var(--ink-soft);
+      cursor: pointer;
+      transition: all .3s;
+    }
+    .sort-btn:hover { color: var(--ink); }
+    .sort-btn.sort-active { background: var(--ink); color: var(--paper); font-weight: 700; }
+    /* 只看热门 / 重置 */
+    .hot-toggle {
+      border: 1.5px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 5px 11px;
+      cursor: pointer;
+      transition: all .3s;
+    }
+    .hot-toggle:hover { box-shadow: 2px 2px 0 var(--line); transform: translate(-1px,-1px); }
+    .hot-toggle.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 3px 3px 0 var(--line); font-weight: 700; }
+    .reset-btn {
+      border: 1px dashed var(--ink-soft);
+      border-radius: 0;
+      background: transparent;
+      color: var(--ink-soft);
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 5px 11px;
+      cursor: pointer;
+      transition: all .3s;
+    }
+    .reset-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .result-count {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-soft);
+    }
+    .result-count b { color: var(--accent); font-size: 14px; }
+
+    /* ---- 语录卡片：证物档案卡（核心难忘元素）---- */
+    .quote-card {
+      position: relative;
+      background: var(--surface);
+      border: 2px solid var(--line);
+      border-radius: 0;
+      padding: 16px 16px 12px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 4px 4px 0 transparent;
+      transition: transform .3s, box-shadow .3s;
+      overflow: hidden;
+    }
+    .quote-card:hover { transform: translate(-3px,-3px); box-shadow: 7px 7px 0 var(--line); }
+    /* 热门卡片左侧朱红竖条 */
+    .quote-card.is-hot::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent);
+    }
+    .record-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .exhibit-no {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .1em;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+    }
+    .record-top-right { display: flex; align-items: center; gap: 7px; }
+    .hot-stamp {
+      font-family: var(--mono);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      color: #fff;
+      background: var(--accent);
+      padding: 2px 6px;
+      transform: rotate(3deg);
+    }
+    .copy-btn {
+      width: 26px; height: 26px;
+      border: 1.5px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      color: var(--ink);
+      display: grid; place-items: center;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all .3s;
+    }
+    .copy-btn:hover { background: var(--ink); color: var(--paper); }
+    .cat-tag {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: var(--paper);
+      background: var(--ink);
+      padding: 3px 8px;
+      display: inline-block;
+      margin-top: 12px;
+      align-self: flex-start;
+    }
+    /* 倾斜"机密"印章：机密封锁感 */
+    .classify-stamp {
+      align-self: flex-start;
+      margin-top: 10px;
+      margin-left: auto;
+      border: 1.5px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      padding: 2px 6px;
+      transform: rotate(-7deg);
+      opacity: .8;
+      white-space: nowrap;
+    }
+    .record-body { position: relative; margin: 12px 0 16px; flex: 1; }
+    /* 超大引号水印，editorial 味道 */
+    .quote-mark {
+      position: absolute; top: -16px; left: -3px;
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 68px; line-height: 1;
+      color: var(--accent); opacity: .14;
+      pointer-events: none; user-select: none;
+    }
+    .record-text {
+      position: relative;
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--ink);
+      word-break: break-word;
+      margin: 0;
+    }
+    .record-foot {
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid var(--line);
+      padding-top: 9px;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--ink-soft);
+      letter-spacing: .04em;
+    }
+    .record-foot i { font-size: 8px; margin-right: 5px; color: var(--accent); }
+    /* 证物袋编号：红色蜡封圆章 + CASE 编号（证物封存细节） */
+    .case-ref {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: var(--mono); font-size: 8px; font-weight: 700;
+      letter-spacing: .06em; color: var(--accent); white-space: nowrap;
+    }
+    .wax-seal {
+      display: inline-grid; place-items: center;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      font-size: 7px; letter-spacing: 0;
+      border: 2px double rgba(255,255,255,.45);
+      transform: rotate(-14deg);
+      box-shadow: 2px 2px 0 var(--line);
+    }
+    /* 窄屏只留蜡封圆章，隐藏编号文字防止底部拥挤 */
+    @media (max-width: 480px) { .case-txt { display: none; } }
+
+    /* ---- 空状态 ---- */
+    .empty-box {
+      border: 2px dashed var(--line);
+      padding: 56px 20px;
+      text-align: center;
+      font-family: var(--mono);
+      color: var(--ink-soft);
+      font-size: 12px;
+    }
+
+    /* ---- 页脚：反色面板，与横幅首尾呼应 ---- */
+    .footer-panel {
+      background: var(--ink);
+      color: var(--paper);
+      border-top: 2px solid var(--line);
+    }
+    .footer-head {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--onink);
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .footer-text {
+      font-size: 12px; line-height: 1.8; opacity: .72;
+    }
+
+    /* ---- 回到顶部：直角朱红方块 ---- */
+    #backToTop {
+      position: fixed; bottom: 22px; right: 22px; z-index: 40;
+      width: 42px; height: 42px;
+      background: var(--accent); color: #fff;
+      border: 2px solid var(--line);
+      box-shadow: 4px 4px 0 var(--line);
+      display: grid; place-items: center;
+      cursor: pointer;
+      transition: opacity .3s, transform .3s;
+    }
+    #backToTop:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--line); }
+    #backToTop.hidden-btn { opacity: 0; transform: translateY(10px); pointer-events: none; }
+
+    /* ---- Toast：硬边墨底 ---- */
+    #toast {
+      position: fixed; bottom: 26px; left: 50%; z-index: 50;
+      background: var(--ink); color: var(--paper);
+      border: 2px solid var(--accent);
+      box-shadow: 4px 4px 0 var(--accent);
+      font-family: var(--mono); font-size: 12px;
+      padding: 10px 18px;
+      display: flex; align-items: center; gap: 8px;
+      transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+      transition: opacity .3s, transform .3s;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translate(-50%, 0); opacity: 1; }
+    #toast i { color: var(--onink); }
+
+    /* ---- 入场动画：盖章式，有编排的 stagger ---- */
+    .selectable { user-select: text; -webkit-user-select: text; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* ---- 卡片 hover 微动效（上浮 + 阴影加深） ---- */
-    .quote-card { transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; }
-    .quote-card:hover { transform: translateY(-4px); box-shadow: 0 14px 32px -8px rgba(79, 70, 229, 0.22); }
-
-    /* ---- 分类标签选中态 ---- */
-    .tag-active {
-      background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
-      color: #fff !important;
-      border-color: transparent !important;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    @keyframes stampIn {
+      0%   { opacity: 0; transform: scale(1.05) rotate(-1.2deg); }
+      100% { opacity: 1; transform: scale(1) rotate(0); }
     }
-
-    /* ---- 来源标签选中态（较柔和的描边风格） ---- */
-    .source-active {
-      background: #eef2ff !important;
-      color: #4f46e5 !important;
-      border-color: #a5b4fc !important;
+    .stamp-in { animation: stampIn .3s cubic-bezier(.2,.9,.3,1.15) both; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-    .dark .source-active {
-      background: #312e81 !important;
-      color: #c7d2fe !important;
-      border-color: #6366f1 !important;
+    .fade-in { animation: fadeUp .3s ease-out both; }
+
+    /* ---- 移动端细调 ---- */
+    @media (max-width: 768px) {
+      .brand-name { font-size: 15px; }
+      .hero-desc { font-size: 11px; }
+      .record-text { font-size: 13px; }
+      .archive-stamp { font-size: 10px; padding: 7px 10px; }
     }
-
-    /* ---- 只看热门开关选中态（暖色系区分） ---- */
-    .hot-toggle.active {
-      background: linear-gradient(135deg, #f43f5e, #e11d48) !important;
-      color: #fff !important;
-      border-color: transparent !important;
-      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+    @media (max-width: 480px) {
+      .stat-cell { padding: 10px; }
+      .stat-label { font-size: 8px; }
     }
-
-    /* ---- Toast 轻提示动画 ---- */
-    #toast {
-      transition: opacity 0.3s, transform 0.3s;
-      transform: translate(-50%, 20px);
-      opacity: 0;
-      pointer-events: none;
-    }
-    #toast.show { transform: translate(-50%, 0); opacity: 1; }
-
-    /* ---- 文本可选中 ---- */
-    .selectable { user-select: text; -webkit-user-select: text; }
-
-    /* ---- 暗黑模式下的渐变稍作柔和不刺眼 ---- */
-    .dark .brand-gradient { background: linear-gradient(135deg, #4338ca 0%, #5b21b6 55%, #6d28d9 100%); }
-
-    /* ---- 回到顶部按钮显隐 ---- */
-    #backToTop { transition: opacity 0.3s, transform 0.3s; }
-    #backToTop.hidden-btn { opacity: 0; transform: translateY(10px); pointer-events: none; }
-
-    /* ---- 骨架占位淡入 ---- */
-    .fade-in { animation: fadeIn 0.3s ease-out both; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans transition-colors duration-300 min-h-screen flex flex-col">
+<body class="site-body min-h-screen flex flex-col">
 
   <!-- ==================== 顶部导航栏 ==================== -->
-  <nav class="sticky top-0 z-50 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 transition-colors duration-300">
+  <nav class="topbar sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
+      <div class="flex items-center justify-between h-16 gap-3">
 
-        <!-- 左侧 Logo + 名称 -->
-        <a href="#" class="flex items-center gap-2.5 group">
-          <span class="w-9 h-9 rounded-lg brand-gradient flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform duration-300">
+        <!-- 左侧 Logo + 名称（直角朱红方块 + 双行字） -->
+        <a href="#" class="flex items-center gap-2.5 group flex-shrink-0" aria-label="串子语录档案馆首页">
+          <span class="logo-mark group-hover:rotate-[-6deg] transition-transform duration-300">
             <i class="fa-solid fa-quote-right text-sm"></i>
           </span>
-          <span class="font-bold text-base sm:text-lg brand-text-gradient whitespace-nowrap">串子语录档案馆</span>
+          <span class="flex flex-col">
+            <span class="brand-name">串子语录档案馆</span>
+            <span class="brand-sub">The Chuanci Archive</span>
+          </span>
         </a>
 
         <!-- 右侧桌面端功能区 -->
         <div class="hidden md:flex items-center gap-3">
-          <!-- 全局搜索框 -->
           <div class="relative">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-            <input id="searchInput" type="text" placeholder="搜索语录 / 来源..."
-              class="w-56 lg:w-64 pl-9 pr-3 py-2 text-sm rounded-lg bg-slate-100 dark:bg-slate-700 border border-transparent focus:border-indigo-400 dark:focus:border-indigo-500 outline-none transition-colors duration-300 text-slate-700 dark:text-slate-200 placeholder-slate-400">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px]" style="color:var(--ink-soft)"></i>
+            <input id="searchInput" type="text" placeholder="检索语录 / 来源..."
+              class="search-input w-52 lg:w-64" aria-label="全局搜索">
           </div>
-          <!-- 更新日期标识 -->
-          <span class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
-            <i class="fa-regular fa-calendar-check text-indigo-500"></i>
-            <span id="navDate">--</span>
+          <span class="nav-date flex items-center gap-1.5">
+            <i class="fa-regular fa-calendar-check"></i><span id="navDate">--</span>
           </span>
-          <!-- 暗黑/亮色切换 -->
-          <button id="themeToggle" title="切换主题" class="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition-colors duration-300">
-            <i id="themeIcon" class="fa-solid fa-moon text-indigo-600 dark:text-amber-400"></i>
+          <button id="themeToggle" class="icon-btn" title="切换明暗主题" aria-label="切换明暗主题">
+            <i id="themeIcon" class="fa-solid fa-moon"></i>
           </button>
         </div>
 
-        <!-- 移动端汉堡菜单按钮 -->
-        <button id="menuBtn" class="md:hidden w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center transition-colors duration-300">
-          <i id="menuIcon" class="fa-solid fa-bars text-slate-600 dark:text-slate-300"></i>
+        <!-- 移动端汉堡菜单 -->
+        <button id="menuBtn" class="md:hidden icon-btn" aria-label="打开菜单">
+          <i id="menuIcon" class="fa-solid fa-bars"></i>
         </button>
       </div>
 
       <!-- 移动端折叠菜单 -->
-      <div id="mobileMenu" class="md:hidden hidden pb-4 border-t border-slate-100 dark:border-slate-700 transition-all duration-300">
+      <div id="mobileMenu" class="md:hidden hidden pb-4">
         <div class="pt-3 flex flex-col gap-3">
           <div class="relative">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-            <input id="searchInputMobile" type="text" placeholder="搜索语录 / 来源..."
-              class="w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-slate-100 dark:bg-slate-700 outline-none focus:border-indigo-400 border border-transparent transition-colors duration-300">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px]" style="color:var(--ink-soft)"></i>
+            <input id="searchInputMobile" type="text" placeholder="检索语录 / 来源..."
+              class="search-input" aria-label="全局搜索">
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-              <i class="fa-regular fa-calendar-check text-indigo-500"></i><span id="navDateMobile">--</span>
+            <span class="nav-date flex items-center gap-1.5">
+              <i class="fa-regular fa-calendar-check"></i><span id="navDateMobile">--</span>
             </span>
-            <button id="themeToggleMobile" class="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 transition-colors duration-300">
-              <i id="themeIconMobile" class="fa-solid fa-moon text-indigo-600"></i><span>切换主题</span>
+            <button id="themeToggleMobile" class="hot-toggle flex items-center gap-1.5" aria-label="切换明暗主题">
+              <i id="themeIconMobile" class="fa-solid fa-moon"></i><span>切换主题</span>
             </button>
           </div>
         </div>
@@ -160,36 +638,49 @@
     </div>
   </nav>
 
-  <!-- ==================== 数据统计横幅 ==================== -->
-  <section class="brand-gradient text-white relative overflow-hidden">
-    <!-- 背景装饰圆 -->
-    <div class="absolute -top-16 -right-16 w-64 h-64 bg-white/10 rounded-full blur-2xl"></div>
-    <div class="absolute -bottom-20 -left-10 w-56 h-56 bg-white/10 rounded-full blur-2xl"></div>
-
+  <!-- ==================== 数据统计横幅：反色面板 ==================== -->
+  <!-- 犯罪现场封锁带 -->
+  <div class="cordon">
+    <span class="cordon-label"><i class="fa-solid fa-triangle-exclamation mr-2"></i><span class="cordon-long">POLICE LINE · DO NOT CROSS · 现场封锁 禁止跨越</span><span class="cordon-short">禁止跨越 · DO NOT CROSS</span></span>
+  </div>
+  <section class="hero-panel">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 relative">
-      <div class="flex items-center gap-2 text-indigo-100 text-xs mb-2">
-        <i class="fa-solid fa-archive"></i><span>INTERNET QUOTES ARCHIVE</span>
+      <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+        <div>
+          <div class="hero-kicker mb-3 flex items-center gap-2 stamp-in" style="animation-delay:.05s">
+            <i class="fa-solid fa-archive"></i><span>File No. 0426 / Internet Quotes Archive</span>
+          </div>
+          <h1 class="hero-title stamp-in" style="animation-delay:.1s">
+            收录全网<br>经典<em>「串子」</em>发言
+          </h1>
+          <p class="hero-desc mt-4 stamp-in" style="animation-delay:.16s">
+            // 电竞 · 饭圈 · 职场 · 互联网魔怔 —— 那些让你绷不住的名场面，<br class="hidden sm:block">
+            已作为网络疯话证物，编号封存于此。
+          </p>
+        </div>
+        <!-- 不对称元素：旋转印章 -->
+        <div class="archive-stamp stamp-in self-start md:mt-2" style="animation-delay:.24s">
+          <i class="fa-solid fa-lock mr-1.5"></i>绝密 / TOP SECRET
+        </div>
       </div>
-      <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">收录全网经典「串子」发言</h1>
-      <p class="text-indigo-100 text-sm sm:text-base mb-8 max-w-2xl">电竞、饭圈、职场、互联网魔怔…… 那些让你绷不住的名场面，都在这里。</p>
 
-      <!-- 四个统计卡片 -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div class="bg-white/12 backdrop-blur-sm rounded-xl p-4 border border-white/15">
-          <div class="text-2xl sm:text-3xl font-bold" id="statTotal">0</div>
-          <div class="text-xs text-indigo-100 mt-1 flex items-center gap-1.5"><i class="fa-solid fa-database"></i>语录总条数</div>
+      <!-- 四个统计格（硬边框，无圆角无玻璃） -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-9">
+        <div class="stat-cell stamp-in" style="animation-delay:.3s">
+          <div class="stat-num" id="statTotal">0</div>
+          <div class="stat-label"><i class="fa-solid fa-database mr-1"></i>语录总数 / FILES</div>
         </div>
-        <div class="bg-white/12 backdrop-blur-sm rounded-xl p-4 border border-white/15">
-          <div class="text-2xl sm:text-3xl font-bold" id="statCats">0</div>
-          <div class="text-xs text-indigo-100 mt-1 flex items-center gap-1.5"><i class="fa-solid fa-layer-group"></i>分类总数</div>
+        <div class="stat-cell stamp-in" style="animation-delay:.36s">
+          <div class="stat-num" id="statCats">0</div>
+          <div class="stat-label"><i class="fa-solid fa-layer-group mr-1"></i>分类数 / SECTIONS</div>
         </div>
-        <div class="bg-white/12 backdrop-blur-sm rounded-xl p-4 border border-white/15">
-          <div class="text-2xl sm:text-3xl font-bold" id="statToday">0</div>
-          <div class="text-xs text-indigo-100 mt-1 flex items-center gap-1.5"><i class="fa-solid fa-sparkles"></i>今日新增</div>
+        <div class="stat-cell stamp-in" style="animation-delay:.42s">
+          <div class="stat-num" id="statToday">0</div>
+          <div class="stat-label"><i class="fa-solid fa-sparkles mr-1"></i>今日新增 / NEW TODAY</div>
         </div>
-        <div class="bg-white/12 backdrop-blur-sm rounded-xl p-4 border border-white/15">
-          <div class="text-lg sm:text-xl font-bold mt-1" id="statUpdate">--</div>
-          <div class="text-xs text-indigo-100 mt-1 flex items-center gap-1.5"><i class="fa-regular fa-clock"></i>最后更新</div>
+        <div class="stat-cell stamp-in" style="animation-delay:.48s">
+          <div class="stat-num text-[18px] sm:text-[22px] mt-1.5" id="statUpdate">--</div>
+          <div class="stat-label"><i class="fa-regular fa-clock mr-1"></i>最后更新 / UPDATED</div>
         </div>
       </div>
     </div>
@@ -198,96 +689,86 @@
   <!-- ==================== 主体内容 ==================== -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <!-- 分类筛选 + 排序控制 -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-colors duration-300">
+    <!-- 筛选面板 -->
+    <section class="filter-panel p-4 sm:p-5 mb-7" aria-label="筛选与排序">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="section-index">[ 01 ]</span>
+        <span class="panel-heading">检索与筛选 / FILTER INDEX</span>
+      </div>
+
       <!-- 分类标签 -->
-      <div class="flex items-center gap-2 mb-3 overflow-x-auto no-scrollbar pb-1" id="categoryBar">
-        <!-- 由 JS 动态渲染 -->
-      </div>
+      <div class="flex items-center gap-2 mb-3 overflow-x-auto no-scrollbar pb-1" id="categoryBar"></div>
       <!-- 来源平台标签 -->
-      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="sourceBar">
-        <!-- 由 JS 动态渲染 -->
-      </div>
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="sourceBar"></div>
+
       <!-- 排序与结果数 -->
-      <div class="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-slate-100 dark:border-slate-700">
-        <div class="text-xs text-slate-500 dark:text-slate-400">
-          共找到 <span id="resultCount" class="font-bold text-indigo-600 dark:text-indigo-400">0</span> 条语录
-        </div>
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-4 mt-4" style="border-top:1px dashed var(--line)">
+        <div class="result-count">共检出 <b id="resultCount">0</b> 份证物记录</div>
         <div class="flex flex-wrap items-center gap-2">
-          <!-- 只看热门开关 -->
-          <button id="hotToggle" class="hot-toggle flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all duration-300">
+          <button id="hotToggle" class="hot-toggle flex items-center gap-1.5">
             <i class="fa-solid fa-fire"></i> 只看热门
           </button>
-          <!-- 重置筛选 -->
-          <button id="resetFilter" class="hidden flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-indigo-300 dark:hover:border-indigo-500 transition-all duration-300">
+          <button id="resetFilter" class="reset-btn hidden flex items-center gap-1.5">
             <i class="fa-solid fa-rotate-left"></i> 重置
           </button>
-          <!-- 排序切换 -->
-          <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
-            <button data-sort="time" class="sort-btn px-3 py-1.5 text-xs rounded-md transition-all duration-300">最新收录</button>
-            <button data-sort="hot" class="sort-btn px-3 py-1.5 text-xs rounded-md transition-all duration-300">热度优先</button>
+          <div class="flex items-center gap-1" style="border:1.5px solid var(--line)">
+            <button data-sort="time" class="sort-btn">最新收录</button>
+            <button data-sort="hot" class="sort-btn">热度优先</button>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- 语录卡片网格：桌面3列 / 平板2列 / 移动1列 -->
-    <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-      <!-- 由 JS 动态渲染 -->
-    </div>
+    <!-- 语录卡片网格：桌面3 / 平板2 / 移动1 -->
+    <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5"></div>
 
     <!-- 空状态 -->
-    <div id="emptyState" class="hidden text-center py-20">
-      <i class="fa-regular fa-folder-open text-5xl text-slate-300 dark:text-slate-600 mb-4"></i>
-      <p class="text-slate-400 dark:text-slate-500">没有找到匹配的语录，换个关键词试试吧</p>
+    <div id="emptyState" class="hidden">
+      <div class="empty-box">
+        <i class="fa-regular fa-folder-open text-3xl mb-3 block"></i>
+        未检出匹配证物 —— 换个关键词或重置筛选条件
+      </div>
     </div>
   </main>
 
-  <!-- ==================== 页脚 ==================== -->
-  <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 transition-colors duration-300">
+  <!-- ==================== 页脚：反色面板 ==================== -->
+  <footer class="footer-panel">
+    <div class="hazard-invert"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
-          <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
-            <i class="fa-solid fa-quote-right text-indigo-500"></i>关于本站
-          </h3>
-          <p class="text-slate-500 dark:text-slate-400 leading-relaxed">串子语录档案馆是一个纯兴趣驱动的网络语录收录展示项目，旨在记录那些令人捧腹的互联网名场面，仅供娱乐与怀旧之用。</p>
+          <h3 class="footer-head"><i class="fa-solid fa-quote-right mr-1.5"></i>关于本站 / ABOUT</h3>
+          <p class="footer-text">串子语录档案馆是一份纯兴趣驱动的网络语录收录档案，记录那些令人捧腹的互联网名场面，仅供娱乐与怀旧。本档案持续自动增补中。</p>
         </div>
         <div>
-          <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
-            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>免责声明
-          </h3>
-          <p class="text-slate-500 dark:text-slate-400 leading-relaxed">本站所有语录均来源于公开网络平台，版权归原作者所有。如涉及侵权或不妥内容，请联系删除。本站内容不代表站长观点，请勿用于任何商业或不当用途。</p>
+          <h3 class="footer-head"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i>免责声明 / DISCLAIMER</h3>
+          <p class="footer-text">所有语录均来源于公开网络平台，版权归原作者所有。如涉及侵权或不妥内容，请联系删除。本站内容不代表站长观点，请勿用于任何商业或不当用途。</p>
         </div>
         <div>
-          <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
-            <i class="fa-solid fa-rotate text-emerald-500"></i>更新机制
-          </h3>
-          <p class="text-slate-500 dark:text-slate-400 leading-relaxed">数据每日自动更新，通过内置的 JSON 数据源加载。预留 API 接口字段，后续可对接爬虫实现全自动采集与入库。最后更新：<span id="footerDate">--</span></p>
+          <h3 class="footer-head"><i class="fa-solid fa-rotate mr-1.5"></i>更新机制 / AUTO-UPDATE</h3>
+          <p class="footer-text">证物每日自动采集入库，按内容去重，上限一万条。最后归档：<span id="footerDate">--</span></p>
         </div>
       </div>
-      <div class="border-t border-slate-100 dark:border-slate-700 mt-8 pt-6 text-center text-xs text-slate-400 dark:text-slate-500">
-        <p>© <span id="year"></span> 串子语录档案馆 · Made with <i class="fa-solid fa-heart text-red-400"></i> & Tailwind CSS</p>
+      <div class="mt-9 pt-6 text-[10px] opacity-60" style="border-top:1px solid var(--paper)">
+        <p>© <span id="year"></span> 串子语录档案馆 · BUILT WITH TAILWIND CSS · <span style="color:var(--onink)">KEEP IT WEIRD</span></p>
       </div>
     </div>
   </footer>
 
-  <!-- 回到顶部按钮 -->
-  <button id="backToTop" title="回到顶部" class="hidden-btn fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full brand-gradient text-white shadow-lg hover:scale-110 flex items-center justify-center">
+  <!-- 回到顶部 -->
+  <button id="backToTop" class="hidden-btn" title="回到顶部" aria-label="回到顶部">
     <i class="fa-solid fa-arrow-up"></i>
   </button>
 
-  <!-- 复制成功 Toast 轻提示 -->
-  <div id="toast" class="fixed bottom-8 left-1/2 z-50 bg-slate-800 dark:bg-white text-white dark:text-slate-800 px-5 py-2.5 rounded-full text-sm shadow-xl flex items-center gap-2">
-    <i class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-500"></i><span>复制成功</span>
+  <!-- 复制成功 Toast -->
+  <div id="toast" role="status" aria-live="polite">
+    <i class="fa-solid fa-circle-check"></i><span>证物已复制 / COPIED</span>
   </div>
 
-  <!-- ==================== 数据 + 交互逻辑 ==================== -->
+  <!-- ==================== 数据 + 交互逻辑（保留原功能） ==================== -->
   <script>
   /* ============================================================
-   * 配置区：预留 API 对接字段
-   * useApi = false 时使用下方内置的 QUOTES 数组
-   * 后续接入爬虫时，将 useApi 改为 true 并填写 apiEndpoint 即可
+   * 配置区：预留 API 对接字段（已按线上部署配置）
    * ============================================================ */
   const CONFIG = {
     useApi: true,                              // 已开启：从 quotes.json 读取爬虫数据
@@ -297,7 +778,7 @@
   };
 
   /* ============================================================
-   * 内置数据：24 条示例语录
+   * 内置数据：24 条示例语录（API 失败时回退）
    * 结构：{ id, content, category, source, date, hot }
    * ============================================================ */
   const QUOTES = [
@@ -327,49 +808,37 @@
     { id: 24, content: '楼主 SB，楼层跟上，二楼说什么，三楼附议。', category: '经典老串', source: '贴吧', date: '2026-11-12', hot: false },
   ];
 
-  // 预设分类
   const CATEGORIES = ['全部', '电竞圈', '饭圈', '职场', '互联网魔怔', '键政', '情感钓鱼', '游戏区', '经典老串'];
 
-  // 来源平台对应的图标颜色（用于标识）
   const SOURCE_COLORS = {
     '贴吧': 'text-blue-500', '微博': 'text-rose-500', '抖音': 'text-slate-700 dark:text-slate-200',
     'NGA': 'text-orange-500', 'B站': 'text-sky-500', '知乎': 'text-blue-600',
   };
 
-  /* ============================================================
-   * 状态管理
-   * ============================================================ */
   let state = {
     data: QUOTES,
-    category: '全部',   // 分类筛选
-    source: '全部',     // 来源平台筛选
+    category: '全部',
+    source: '全部',
     sort: 'time',       // 'time' | 'hot'
     keyword: '',
-    onlyHot: false,     // 是否只看热门
+    onlyHot: false,
   };
 
-  /* ============================================================
-   * 工具函数
-   * ============================================================ */
-
-  // HTML 转义，防止特殊字符破坏结构
+  /* ---------- 工具函数 ---------- */
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
   }
 
-  // 获取今天的日期字符串 YYYY-MM-DD
+  // 今日日期：直接用 CONFIG.today（北京时间），与爬虫数据严格一致
   function getTodayStr() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return CONFIG.today;
   }
 
-  // 复制文本到剪贴板（兼容新旧浏览器）
   async function copyText(text) {
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
       } else {
-        // 降级方案：textarea + execCommand
         const ta = document.createElement('textarea');
         ta.value = text;
         ta.style.position = 'fixed';
@@ -385,11 +854,7 @@
     }
   }
 
-  /* ============================================================
-   * 渲染函数
-   * ============================================================ */
-
-  // 渲染统计横幅
+  /* ---------- 渲染函数 ---------- */
   function renderStats() {
     const cats = new Set(state.data.map(q => q.category)).size;
     const today = getTodayStr();
@@ -408,20 +873,13 @@
     document.getElementById('year').textContent = new Date().getFullYear();
   }
 
-  // 渲染分类标签
   function renderCategories() {
     const bar = document.getElementById('categoryBar');
     bar.innerHTML = CATEGORIES.map(cat => {
       const active = state.category === cat;
-      return `<button data-cat="${escapeHtml(cat)}"
-        class="tag-btn flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-all duration-300 ${
-          active
-            ? 'tag-active border-transparent'
-            : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-indigo-300 dark:hover:border-indigo-500'
-        }">${escapeHtml(cat)}</button>`;
+      return `<button data-cat="${escapeHtml(cat)}" class="tag-btn chip ${active ? 'chip-active' : ''}">${escapeHtml(cat)}</button>`;
     }).join('');
 
-    // 绑定点击事件（事件委托）
     bar.querySelectorAll('.tag-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         state.category = btn.dataset.cat;
@@ -431,10 +889,8 @@
     });
   }
 
-  // 渲染来源平台标签（来源从实际数据动态提取，新增来源自动出现）
   function renderSources() {
     const bar = document.getElementById('sourceBar');
-    // 统计每个来源的数量，按数量降序排列
     const counts = {};
     state.data.forEach(q => { counts[q.source] = (counts[q.source] || 0) + 1; });
     const sources = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
@@ -442,13 +898,8 @@
 
     bar.innerHTML = all.map(src => {
       const active = state.source === src;
-      const label = src === '全部' ? '全部来源' : `${escapeHtml(src)} <span class="opacity-60">(${counts[src]})</span>`;
-      return `<button data-source="${escapeHtml(src)}"
-        class="source-btn flex-shrink-0 px-3 py-1 rounded-full text-xs border transition-all duration-300 ${
-          active
-            ? 'source-active'
-            : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-indigo-300 dark:hover:border-indigo-500'
-        }">${label}</button>`;
+      const label = src === '全部' ? '全部来源' : `${escapeHtml(src)} <span class="src-count">(${counts[src]})</span>`;
+      return `<button data-source="${escapeHtml(src)}" class="source-btn src-chip ${active ? 'src-chip-active' : ''}">${label}</button>`;
     }).join('');
 
     bar.querySelectorAll('.source-btn').forEach(btn => {
@@ -460,23 +911,18 @@
     });
   }
 
-  // 根据筛选/搜索/排序获取当前展示的数据
   function getFilteredData() {
     let list = [...state.data];
 
-    // 分类筛选
     if (state.category !== '全部') {
       list = list.filter(q => q.category === state.category);
     }
-    // 来源平台筛选
     if (state.source !== '全部') {
       list = list.filter(q => q.source === state.source);
     }
-    // 只看热门
     if (state.onlyHot) {
       list = list.filter(q => q.hot === true);
     }
-    // 关键词搜索（正文、分类、来源）
     if (state.keyword.trim()) {
       const kw = state.keyword.trim().toLowerCase();
       list = list.filter(q =>
@@ -485,7 +931,6 @@
         q.source.toLowerCase().includes(kw)
       );
     }
-    // 排序
     if (state.sort === 'hot') {
       list.sort((a, b) => (b.hot - a.hot) || b.date.localeCompare(a.date));
     } else {
@@ -494,14 +939,12 @@
     return list;
   }
 
-  // 更新「重置」按钮显隐（有任意筛选条件时显示）
   function updateResetButton() {
     const active = state.category !== '全部' || state.source !== '全部' ||
                    state.onlyHot || state.keyword.trim() !== '';
     document.getElementById('resetFilter').classList.toggle('hidden', !active);
   }
 
-  // 渲染语录卡片
   function renderCards() {
     const grid = document.getElementById('cardsGrid');
     const empty = document.getElementById('emptyState');
@@ -518,30 +961,39 @@
     empty.classList.add('hidden');
 
     grid.innerHTML = list.map((q, i) => `
-      <article class="quote-card fade-in bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 flex flex-col" style="animation-delay:${i * 20}ms">
-        <!-- 顶部：分类标签 + 热门标识 + 复制按钮 -->
-        <div class="flex items-center justify-between gap-2 mb-3">
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="px-2.5 py-1 rounded-md text-xs font-medium brand-gradient text-white">${escapeHtml(q.category)}</span>
-            ${q.hot ? '<span class="px-2 py-1 rounded-md text-xs font-medium bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400"><i class="fa-solid fa-fire"></i> 热</span>' : ''}
+      <article class="quote-card fade-in ${q.hot ? 'is-hot' : ''}" style="animation-delay:${Math.min(i, 20) * 18}ms">
+        <!-- 顶部：档案编号 + 热门章 + 复制 -->
+        <div class="record-top">
+          <span class="exhibit-no"><i class="fa-solid fa-hashtag mr-0.5"></i>EXHIBIT ${String(q.id).padStart(6, '0').slice(-6)}</span>
+          <div class="record-top-right">
+            ${q.hot ? '<span class="hot-stamp">HOT</span>' : ''}
+            <button data-copy="${q.id}" title="复制语录" class="copy-btn" aria-label="复制语录">
+              <i class="fa-regular fa-copy"></i>
+            </button>
           </div>
-          <button data-copy="${q.id}" title="复制语录" class="copy-btn flex-shrink-0 w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center justify-center transition-colors duration-300">
-            <i class="fa-regular fa-copy text-sm"></i>
-          </button>
         </div>
-        <!-- 语录正文（可选中、自动换行） -->
-        <p class="selectable text-slate-700 dark:text-slate-200 leading-7 text-sm sm:text-base flex-1 mb-4 break-words">${escapeHtml(q.content)}</p>
-        <!-- 底部：来源 + 日期 -->
-        <div class="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-700 pt-3">
-          <span class="flex items-center gap-1.5">
-            <i class="fa-solid fa-circle-dot ${SOURCE_COLORS[q.source] || 'text-slate-400'}"></i>${escapeHtml(q.source)}
+        <!-- 分类标签 + 机密封锁印章 -->
+        <div class="flex items-start justify-between gap-2">
+          <span class="cat-tag">${escapeHtml(q.category)}</span>
+          <span class="classify-stamp">机密 / CLASSIFIED</span>
+        </div>
+        <!-- 正文（可选中，超大引号水印） -->
+        <div class="record-body">
+          <span class="quote-mark" aria-hidden="true">“</span>
+          <p class="selectable record-text">${escapeHtml(q.content)}</p>
+        </div>
+        <!-- 底部：来源 + 证物袋蜡封编号 + 日期 -->
+        <div class="record-foot">
+          <span><i class="fa-solid fa-circle-dot ${SOURCE_COLORS[q.source] || ''}"></i>${escapeHtml(q.source)}</span>
+          <span class="case-ref" title="证物袋编号">
+            <span class="wax-seal" aria-hidden="true">${String(q.id).slice(-2)}</span>
+            <span class="case-txt">CASE-${String(q.id).padStart(6, '0').slice(-6)}</span>
           </span>
-          <span class="flex items-center gap-1.5"><i class="fa-regular fa-calendar"></i>${escapeHtml(q.date)}</span>
+          <span>${escapeHtml(q.date)}</span>
         </div>
       </article>
     `).join('');
 
-    // 绑定复制按钮
     grid.querySelectorAll('.copy-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = Number(btn.dataset.copy);
@@ -553,20 +1005,12 @@
     });
   }
 
-  // 更新排序按钮的高亮态
   function updateSortButtons() {
     document.querySelectorAll('.sort-btn').forEach(b => {
-      const active = b.dataset.sort === state.sort;
-      b.classList.toggle('bg-white', active);
-      b.classList.toggle('dark:bg-slate-600', active);
-      b.classList.toggle('shadow-sm', active);
-      b.classList.toggle('font-medium', active);
-      b.classList.toggle('text-indigo-600', active);
-      b.classList.toggle('dark:text-indigo-400', active);
+      b.classList.toggle('sort-active', b.dataset.sort === state.sort);
     });
   }
 
-  // 显示「复制成功」Toast
   let toastTimer = null;
   function showToast() {
     const toast = document.getElementById('toast');
@@ -575,28 +1019,20 @@
     toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
   }
 
-  /* ============================================================
-   * 主题（暗黑/亮色）切换
-   * ============================================================ */
+  /* ---------- 主题切换 ---------- */
   function applyTheme(isDark) {
     const html = document.documentElement;
-    if (isDark) {
-      html.classList.add('dark');
-    } else {
-      html.classList.remove('dark');
-    }
+    html.classList.toggle('dark', isDark);
     localStorage.setItem('chuanci-theme', isDark ? 'dark' : 'light');
-    // 同步两个图标
     const iconHtml = isDark
-      ? '<i class="fa-solid fa-sun text-amber-400"></i>'
-      : '<i class="fa-solid fa-moon text-indigo-600"></i>';
+      ? '<i class="fa-solid fa-sun"></i>'
+      : '<i class="fa-solid fa-moon"></i>';
     document.getElementById('themeIcon').innerHTML = iconHtml;
     document.getElementById('themeIconMobile').innerHTML = iconHtml;
   }
 
   function initTheme() {
     const saved = localStorage.getItem('chuanci-theme');
-    // 未设置过时跟随系统偏好
     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     applyTheme(saved ? saved === 'dark' : prefersDark);
   }
@@ -605,25 +1041,20 @@
     applyTheme(!document.documentElement.classList.contains('dark'));
   }
 
-  /* ============================================================
-   * 事件绑定
-   * ============================================================ */
+  /* ---------- 事件绑定 ---------- */
   function bindEvents() {
-    // 主题切换（桌面 + 移动）
     document.getElementById('themeToggle').addEventListener('click', toggleTheme);
     document.getElementById('themeToggleMobile').addEventListener('click', toggleTheme);
 
-    // 汉堡菜单
     const menuBtn = document.getElementById('menuBtn');
     const mobileMenu = document.getElementById('mobileMenu');
     const menuIcon = document.getElementById('menuIcon');
     menuBtn.addEventListener('click', () => {
       const isOpen = !mobileMenu.classList.contains('hidden');
       mobileMenu.classList.toggle('hidden', isOpen);
-      menuIcon.className = isOpen ? 'fa-solid fa-bars text-slate-600 dark:text-slate-300' : 'fa-solid fa-xmark text-slate-600 dark:text-slate-300';
+      menuIcon.className = isOpen ? 'fa-solid fa-bars' : 'fa-solid fa-xmark';
     });
 
-    // 搜索（桌面 + 移动，实时同步）
     const inputs = [document.getElementById('searchInput'), document.getElementById('searchInputMobile')];
     inputs.forEach(input => {
       input.addEventListener('input', (e) => {
@@ -633,7 +1064,6 @@
       });
     });
 
-    // 排序按钮
     document.querySelectorAll('.sort-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         state.sort = btn.dataset.sort;
@@ -642,7 +1072,6 @@
       });
     });
 
-    // 只看热门开关
     const hotToggle = document.getElementById('hotToggle');
     hotToggle.addEventListener('click', () => {
       state.onlyHot = !state.onlyHot;
@@ -654,7 +1083,6 @@
       renderCards();
     });
 
-    // 重置筛选
     document.getElementById('resetFilter').addEventListener('click', () => {
       state.category = '全部';
       state.source = '全部';
@@ -670,7 +1098,6 @@
       renderCards();
     });
 
-    // 回到顶部
     const backToTop = document.getElementById('backToTop');
     window.addEventListener('scroll', () => {
       backToTop.classList.toggle('hidden-btn', window.scrollY < 300);
@@ -680,15 +1107,12 @@
     });
   }
 
-  /* ============================================================
-   * 数据加载（预留 API 对接）
-   * ============================================================ */
+  /* ---------- 数据加载（预留 API 对接） ---------- */
   async function loadData() {
     if (CONFIG.useApi && CONFIG.apiEndpoint) {
       try {
         const res = await fetch(CONFIG.apiEndpoint);
         const json = await res.json();
-        // 兼容 { data: [...] } 或直接数组
         state.data = Array.isArray(json) ? json : (json.data || QUOTES);
       } catch (e) {
         console.warn('API 加载失败，回退到本地数据', e);
@@ -699,9 +1123,7 @@
     }
   }
 
-  /* ============================================================
-   * 初始化入口
-   * ============================================================ */
+  /* ---------- 初始化 ---------- */
   async function init() {
     initTheme();
     await loadData();
