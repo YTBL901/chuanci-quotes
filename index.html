@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>串子语录档案馆 - 收录网络经典魔怔语录</title>
+  <meta name="description" content="串子语录档案馆，收录各大网络平台经典串子发言与魔怔语录，支持分类浏览、搜索、每日更新。">
+
+  <!-- ========== Tailwind CSS v3 CDN ========== -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class', // 使用 class 方式切换暗黑模式
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans SC', 'Microsoft YaHei', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- ========== Font Awesome 图标 ========== -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- ========== 自定义样式 ========== -->
+  <style>
+    /* ---- 全局过渡：所有交互动画统一 0.3s 平滑缓动 ---- */
+    * { transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important; }
+
+    /* ---- 主色调渐变：靛蓝 → 深紫 ---- */
+    .brand-gradient { background: linear-gradient(135deg, #4f46e5 0%, #6d28d9 55%, #7c3aed 100%); }
+    .brand-text-gradient {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* ---- 隐藏滚动条但保留滚动功能（移动端菜单） ---- */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* ---- 卡片 hover 微动效（上浮 + 阴影加深） ---- */
+    .quote-card { transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; }
+    .quote-card:hover { transform: translateY(-4px); box-shadow: 0 14px 32px -8px rgba(79, 70, 229, 0.22); }
+
+    /* ---- 分类标签选中态 ---- */
+    .tag-active {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+      color: #fff !important;
+      border-color: transparent !important;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    /* ---- Toast 轻提示动画 ---- */
+    #toast {
+      transition: opacity 0.3s, transform 0.3s;
+      transform: translate(-50%, 20px);
+      opacity: 0;
+      pointer-events: none;
+    }
+    #toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+    /* ---- 文本可选中 ---- */
+    .selectable { user-select: text; -webkit-user-select: text; }
+
+    /* ---- 暗黑模式下的渐变稍作柔和不刺眼 ---- */
+    .dark .brand-gradient { background: linear-gradient(135deg, #4338ca 0%, #5b21b6 55%, #6d28d9 100%); }
+
+    /* ---- 回到顶部按钮显隐 ---- */
+    #backToTop { transition: opacity 0.3s, transform 0.3s; }
+    #backToTop.hidden-btn { opacity: 0; transform: translateY(10px); pointer-events: none; }
+
+    /* ---- 骨架占位淡入 ---- */
+    .fade-in { animation: fadeIn 0.3s ease-out both; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans transition-colors duration-300 min-h-screen flex flex-col">
+
+  <!-- ==================== 顶部导航栏 ==================== -->
+  <nav class="sticky top-0 z-50 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 transition-colors duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+
+        <!-- 左侧 Logo + 名称 -->
+        <a href="#" class="flex items-center gap-2.5 group">
+          <span class="w-9 h-9 rounded-lg brand-gradient flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform duration-300">
+            <i class="fa-solid fa-quote-right text-sm"></i>
+          </span>
+          <span class="font-bold text-base sm:text-lg brand-text-gradient whitespace-nowrap">串子语录档案馆</span>
+        </a>
+
+        <!-- 右侧桌面端功能区 -->
+        <div class="hidden md:flex items-center gap-3">
+          <!-- 全局搜索框 -->
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input id="searchInput" type="text" placeholder="搜索语录 / 来源..."
+              class="w-56 lg:w-64 pl-9 pr-3 py-2 text-sm rounded-lg bg-slate-100 dark:bg-slate-700 border border-transparent focus:border-indigo-400 dark:focus:border-indigo-500 outline-none transition-colors duration-300 text-slate-700 dark:text-slate-200 placeholder-slate-400">
+          </div>
+          <!-- 更新日期标识 -->
+          <span class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
+            <i class="fa-regular fa-calendar-check text-indigo-500"></i>
+            <span id="navDate">--</span>
+          </span>
+          <!-- 暗黑/亮色切换 -->
+          <button id="themeToggle" title="切换主题" class="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition-colors duration-300">
+            <i id="themeIcon" class="fa-solid fa-moon text-indigo-600 dark:text-amber-400"></i>
+          </button>
+        </div>
+
+        <!-- 移动端汉堡菜单按钮 -->
+        <button id="menuBtn" class="md:hidden w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center transition-colors duration-300">
+          <i id="menuIcon" class="fa-solid fa-bars text-slate-600 dark:text-slate-300"></i>
+        </button>
+      </div>
+
+      <!-- 移动端折叠菜单 -->
+      <div id="mobileMenu" class="md:hidden hidden pb-4 border-t border-slate-100 dark:border-slate-700 transition-all duration-300">
+        <div class="pt-3 flex flex-col gap-3">
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input id="searchInputMobile" type="text" placeholder="搜索语录 / 来源..."
+              class="w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-slate-100 dark:bg-slate-700 outline-none focus:border-indigo-400 border border-transparent transition-colors duration-300">
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <i class="fa-regular fa-calendar-check text-indigo-500"></i><span id="navDateMobile">--</span>
+            </span>
+            <button id="themeToggleMobile" class="text-xs flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 transition-colors duration-300">
+              <i id="themeIconMobile" class="fa-solid fa-moon text-indigo-600"></i><span>切换主题</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ==================== 数据统计横幅 ==================== -->
+  <section class="brand-gradient text-white relative overflow-hidden">
+    <!-- 背景装饰圆 -->
+    <div class="absolute -top-16 -right-16 w-64 h-64 bg-white/10 rounded-full blur-2xl"></div>
+    <div class="absolute -bottom-20 -left-10 w-56 h-56 bg-white/10 rounded-full blur-2xl"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 relative">
+      <div class="flex items-center gap-2 text-indigo-100 text-xs mb-2">
+        <i class="fa-solid fa-archive"></i><span>INTERNET QUOTES ARCHIVE</span>
+      </div>
+      <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">收录全网经典「串子」发言</h1>
+      <p class="text-indigo-100 text-sm sm:text-base mb-8 max-w-2xl">电竞、饭圈、职场、互联网魔怔…… 那些让你绷不住的名场面，都在这里。</p>
+
+      <!-- 四个统计卡片 -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div class="bg-white/12 backdrop-blur-sm rounded-xl p-4 border border-white/15">
+          <div class="text-2xl sm:text-3xl font-bold" id="statTotal">0</div>
+          <div class="text-xs text-indigo-100 mt-1 flex items-center gap-1.5"><i class="fa-solid fa-database"></i>语录总条数</div>
+        </div>
+        <div class="bg-white/12 backdrop-blur-sm rounded-xl p-4 border border-white/15">
+          <div class="text-2xl sm:text-3xl font-bold" id="statCats">0</div>
+          <div class="text-xs text-indigo-100 mt-1 flex items-center gap-1.5"><i class="fa-solid fa-layer-group"></i>分类总数</div>
+        </div>
+        <div class="bg-white/12 backdrop-blur-sm rounded-xl p-4 border border-white/15">
+          <div class="text-2xl sm:text-3xl font-bold" id="statToday">0</div>
+          <div class="text-xs text-indigo-100 mt-1 flex items-center gap-1.5"><i class="fa-solid fa-sparkles"></i>今日新增</div>
+        </div>
+        <div class="bg-white/12 backdrop-blur-sm rounded-xl p-4 border border-white/15">
+          <div class="text-lg sm:text-xl font-bold mt-1" id="statUpdate">--</div>
+          <div class="text-xs text-indigo-100 mt-1 flex items-center gap-1.5"><i class="fa-regular fa-clock"></i>最后更新</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 主体内容 ==================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- 分类筛选 + 排序控制 -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-colors duration-300">
+      <!-- 分类标签 -->
+      <div class="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar pb-1" id="categoryBar">
+        <!-- 由 JS 动态渲染 -->
+      </div>
+      <!-- 排序与结果数 -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+        <div class="text-xs text-slate-500 dark:text-slate-400">
+          共找到 <span id="resultCount" class="font-bold text-indigo-600 dark:text-indigo-400">0</span> 条语录
+        </div>
+        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+          <button data-sort="time" class="sort-btn px-3 py-1.5 text-xs rounded-md transition-all duration-300">最新收录</button>
+          <button data-sort="hot" class="sort-btn px-3 py-1.5 text-xs rounded-md transition-all duration-300">热度优先</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 语录卡片网格：桌面3列 / 平板2列 / 移动1列 -->
+    <div id="cardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+      <!-- 由 JS 动态渲染 -->
+    </div>
+
+    <!-- 空状态 -->
+    <div id="emptyState" class="hidden text-center py-20">
+      <i class="fa-regular fa-folder-open text-5xl text-slate-300 dark:text-slate-600 mb-4"></i>
+      <p class="text-slate-400 dark:text-slate-500">没有找到匹配的语录，换个关键词试试吧</p>
+    </div>
+  </main>
+
+  <!-- ==================== 页脚 ==================== -->
+  <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 transition-colors duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
+        <div>
+          <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-quote-right text-indigo-500"></i>关于本站
+          </h3>
+          <p class="text-slate-500 dark:text-slate-400 leading-relaxed">串子语录档案馆是一个纯兴趣驱动的网络语录收录展示项目，旨在记录那些令人捧腹的互联网名场面，仅供娱乐与怀旧之用。</p>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>免责声明
+          </h3>
+          <p class="text-slate-500 dark:text-slate-400 leading-relaxed">本站所有语录均来源于公开网络平台，版权归原作者所有。如涉及侵权或不妥内容，请联系删除。本站内容不代表站长观点，请勿用于任何商业或不当用途。</p>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-rotate text-emerald-500"></i>更新机制
+          </h3>
+          <p class="text-slate-500 dark:text-slate-400 leading-relaxed">数据每日自动更新，通过内置的 JSON 数据源加载。预留 API 接口字段，后续可对接爬虫实现全自动采集与入库。最后更新：<span id="footerDate">--</span></p>
+        </div>
+      </div>
+      <div class="border-t border-slate-100 dark:border-slate-700 mt-8 pt-6 text-center text-xs text-slate-400 dark:text-slate-500">
+        <p>© <span id="year"></span> 串子语录档案馆 · Made with <i class="fa-solid fa-heart text-red-400"></i> & Tailwind CSS</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 回到顶部按钮 -->
+  <button id="backToTop" title="回到顶部" class="hidden-btn fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full brand-gradient text-white shadow-lg hover:scale-110 flex items-center justify-center">
+    <i class="fa-solid fa-arrow-up"></i>
+  </button>
+
+  <!-- 复制成功 Toast 轻提示 -->
+  <div id="toast" class="fixed bottom-8 left-1/2 z-50 bg-slate-800 dark:bg-white text-white dark:text-slate-800 px-5 py-2.5 rounded-full text-sm shadow-xl flex items-center gap-2">
+    <i class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-500"></i><span>复制成功</span>
+  </div>
+
+  <!-- ==================== 数据 + 交互逻辑 ==================== -->
+  <script>
+  /* ============================================================
+   * 配置区：预留 API 对接字段
+   * useApi = false 时使用下方内置的 QUOTES 数组
+   * 后续接入爬虫时，将 useApi 改为 true 并填写 apiEndpoint 即可
+   * ============================================================ */
+  const CONFIG = {
+    useApi: false,
+    apiEndpoint: '',          // 例如：'https://api.example.com/quotes'
+    today: '2026-11-25',      // 用于计算「今日新增」，实际部署可改为 new Date() 自动获取
+  };
+
+  /* ============================================================
+   * 内置数据：24 条示例语录
+   * 结构：{ id, content, category, source, date, hot }
+   * ============================================================ */
+  const QUOTES = [
+    { id: 1,  content: '这波团战打完，我直接把显示器砸了，然后发现是梦境。', category: '电竞圈', source: '贴吧', date: '2026-11-25', hot: true },
+    { id: 2,  content: '打野不来 gank 我就挂机，这是规矩，懂？', category: '电竞圈', source: 'NGA', date: '2026-11-24', hot: false },
+    { id: 3,  content: '辅助不插眼？那我 AD 为什么不 A 兵，reply 一下。', category: '电竞圈', source: '微博', date: '2026-11-20', hot: true },
+    { id: 4,  content: '我家哥哥唱歌虽然跑调，但那叫艺术加工，你懂不懂！', category: '饭圈', source: '微博', date: '2026-11-25', hot: true },
+    { id: 5,  content: '你说我家哥哥不好看？你眼睛是不是捐了？', category: '饭圈', source: '抖音', date: '2026-11-22', hot: false },
+    { id: 6,  content: '控评！控评！把不好的评论都点举报，冲鸭！', category: '饭圈', source: '微博', date: '2026-11-18', hot: false },
+    { id: 7,  content: '这个需求上午提下午要，很合理吧？又不是做火箭。', category: '职场', source: '贴吧', date: '2026-11-25', hot: true },
+    { id: 8,  content: '工资三千，操心三亿的项目，格局打开了。', category: '职场', source: 'NGA', date: '2026-11-23', hot: false },
+    { id: 9,  content: '弹性工作制嘛，就是弹性地加班，很柔性。', category: '职场', source: '贴吧', date: '2026-11-19', hot: false },
+    { id: 10, content: '典！太典了！这帖子典中典，绷不住了。', category: '互联网魔怔', source: '贴吧', date: '2026-11-25', hot: true },
+    { id: 11, content: '我不说话，我就静静地看着你表演。', category: '互联网魔怔', source: '抖音', date: '2026-11-21', hot: false },
+    { id: 12, content: '你急了，你急了，你开始急了，哈哈哈哈。', category: '互联网魔怔', source: 'NGA', date: '2026-11-17', hot: true },
+    { id: 13, content: '我先声明我是理性讨论，但你这个说法我不认同。', category: '键政', source: '微博', date: '2026-11-24', hot: false },
+    { id: 14, content: '键盘在手，天下我有，指点江山挥斥方遒。', category: '键政', source: '贴吧', date: '2026-11-20', hot: false },
+    { id: 15, content: '讨论归讨论，别上升人身攻击，谢谢合作。', category: '键政', source: 'NGA', date: '2026-11-16', hot: false },
+    { id: 16, content: '在吗？在吗？在吗？我有个东西给你看，保证刺激。', category: '情感钓鱼', source: '贴吧', date: '2026-11-25', hot: true },
+    { id: 17, content: '其实我一直在默默关注你，从你第一条动态开始。', category: '情感钓鱼', source: '抖音', date: '2026-11-22', hot: false },
+    { id: 18, content: '你能帮我看看这个吗？我纠结好久了，就你最懂我。', category: '情感钓鱼', source: '微博', date: '2026-11-15', hot: false },
+    { id: 19, content: '这游戏平衡性做得真好，我删游戏了，祝大家玩得开心。', category: '游戏区', source: 'NGA', date: '2026-11-23', hot: true },
+    { id: 20, content: '氪金？这辈子都不可能氪金的，除非真的很划算。', category: '游戏区', source: '贴吧', date: '2026-11-19', hot: false },
+    { id: 21, content: '十连抽全出金，我截图发朋友圈，截图是 P 的。', category: '游戏区', source: '抖音', date: '2026-11-14', hot: false },
+    { id: 22, content: '前排占座，楼下复读，一楼楼上，二楼楼下。', category: '经典老串', source: '贴吧', date: '2026-11-21', hot: true },
+    { id: 23, content: '马克一下，收藏了，以后再看，大概率不会看。', category: '经典老串', source: 'NGA', date: '2026-11-18', hot: false },
+    { id: 24, content: '楼主 SB，楼层跟上，二楼说什么，三楼附议。', category: '经典老串', source: '贴吧', date: '2026-11-12', hot: false },
+  ];
+
+  // 预设分类
+  const CATEGORIES = ['全部', '电竞圈', '饭圈', '职场', '互联网魔怔', '键政', '情感钓鱼', '游戏区', '经典老串'];
+
+  // 来源平台对应的图标颜色（用于标识）
+  const SOURCE_COLORS = {
+    '贴吧': 'text-blue-500', '微博': 'text-rose-500', '抖音': 'text-slate-700 dark:text-slate-200',
+    'NGA': 'text-orange-500', 'B站': 'text-sky-500', '知乎': 'text-blue-600',
+  };
+
+  /* ============================================================
+   * 状态管理
+   * ============================================================ */
+  let state = {
+    data: QUOTES,
+    category: '全部',
+    sort: 'time',       // 'time' | 'hot'
+    keyword: '',
+  };
+
+  /* ============================================================
+   * 工具函数
+   * ============================================================ */
+
+  // HTML 转义，防止特殊字符破坏结构
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
+  }
+
+  // 获取今天的日期字符串 YYYY-MM-DD
+  function getTodayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  // 复制文本到剪贴板（兼容新旧浏览器）
+  async function copyText(text) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // 降级方案：textarea + execCommand
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /* ============================================================
+   * 渲染函数
+   * ============================================================ */
+
+  // 渲染统计横幅
+  function renderStats() {
+    const cats = new Set(state.data.map(q => q.category)).size;
+    const today = getTodayStr();
+    const todayCount = state.data.filter(q => q.date === today).length;
+    const latestDate = state.data.reduce((max, q) => q.date > max ? q.date : max, '');
+
+    document.getElementById('statTotal').textContent = state.data.length;
+    document.getElementById('statCats').textContent = cats;
+    document.getElementById('statToday').textContent = todayCount;
+    document.getElementById('statUpdate').textContent = latestDate;
+
+    const dateText = `${today.replace(/-/g, '/')} 更新`;
+    document.getElementById('navDate').textContent = dateText;
+    document.getElementById('navDateMobile').textContent = dateText;
+    document.getElementById('footerDate').textContent = latestDate;
+    document.getElementById('year').textContent = new Date().getFullYear();
+  }
+
+  // 渲染分类标签
+  function renderCategories() {
+    const bar = document.getElementById('categoryBar');
+    bar.innerHTML = CATEGORIES.map(cat => {
+      const active = state.category === cat;
+      return `<button data-cat="${escapeHtml(cat)}"
+        class="tag-btn flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-all duration-300 ${
+          active
+            ? 'tag-active border-transparent'
+            : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-indigo-300 dark:hover:border-indigo-500'
+        }">${escapeHtml(cat)}</button>`;
+    }).join('');
+
+    // 绑定点击事件（事件委托）
+    bar.querySelectorAll('.tag-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.category = btn.dataset.cat;
+        renderCategories();
+        renderCards();
+      });
+    });
+  }
+
+  // 根据筛选/搜索/排序获取当前展示的数据
+  function getFilteredData() {
+    let list = [...state.data];
+
+    // 分类筛选
+    if (state.category !== '全部') {
+      list = list.filter(q => q.category === state.category);
+    }
+    // 关键词搜索（正文、分类、来源）
+    if (state.keyword.trim()) {
+      const kw = state.keyword.trim().toLowerCase();
+      list = list.filter(q =>
+        q.content.toLowerCase().includes(kw) ||
+        q.category.toLowerCase().includes(kw) ||
+        q.source.toLowerCase().includes(kw)
+      );
+    }
+    // 排序
+    if (state.sort === 'hot') {
+      list.sort((a, b) => (b.hot - a.hot) || b.date.localeCompare(a.date));
+    } else {
+      list.sort((a, b) => b.date.localeCompare(a.date) || a.id - b.id);
+    }
+    return list;
+  }
+
+  // 渲染语录卡片
+  function renderCards() {
+    const grid = document.getElementById('cardsGrid');
+    const empty = document.getElementById('emptyState');
+    const list = getFilteredData();
+
+    document.getElementById('resultCount').textContent = list.length;
+
+    if (list.length === 0) {
+      grid.innerHTML = '';
+      empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+
+    grid.innerHTML = list.map((q, i) => `
+      <article class="quote-card fade-in bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 flex flex-col" style="animation-delay:${i * 20}ms">
+        <!-- 顶部：分类标签 + 热门标识 + 复制按钮 -->
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="px-2.5 py-1 rounded-md text-xs font-medium brand-gradient text-white">${escapeHtml(q.category)}</span>
+            ${q.hot ? '<span class="px-2 py-1 rounded-md text-xs font-medium bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400"><i class="fa-solid fa-fire"></i> 热</span>' : ''}
+          </div>
+          <button data-copy="${q.id}" title="复制语录" class="copy-btn flex-shrink-0 w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center justify-center transition-colors duration-300">
+            <i class="fa-regular fa-copy text-sm"></i>
+          </button>
+        </div>
+        <!-- 语录正文（可选中、自动换行） -->
+        <p class="selectable text-slate-700 dark:text-slate-200 leading-7 text-sm sm:text-base flex-1 mb-4 break-words">${escapeHtml(q.content)}</p>
+        <!-- 底部：来源 + 日期 -->
+        <div class="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-700 pt-3">
+          <span class="flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-dot ${SOURCE_COLORS[q.source] || 'text-slate-400'}"></i>${escapeHtml(q.source)}
+          </span>
+          <span class="flex items-center gap-1.5"><i class="fa-regular fa-calendar"></i>${escapeHtml(q.date)}</span>
+        </div>
+      </article>
+    `).join('');
+
+    // 绑定复制按钮
+    grid.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = Number(btn.dataset.copy);
+        const item = state.data.find(q => q.id === id);
+        if (!item) return;
+        const ok = await copyText(item.content);
+        if (ok) showToast();
+      });
+    });
+  }
+
+  // 更新排序按钮的高亮态
+  function updateSortButtons() {
+    document.querySelectorAll('.sort-btn').forEach(b => {
+      const active = b.dataset.sort === state.sort;
+      b.classList.toggle('bg-white', active);
+      b.classList.toggle('dark:bg-slate-600', active);
+      b.classList.toggle('shadow-sm', active);
+      b.classList.toggle('font-medium', active);
+      b.classList.toggle('text-indigo-600', active);
+      b.classList.toggle('dark:text-indigo-400', active);
+    });
+  }
+
+  // 显示「复制成功」Toast
+  let toastTimer = null;
+  function showToast() {
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+
+  /* ============================================================
+   * 主题（暗黑/亮色）切换
+   * ============================================================ */
+  function applyTheme(isDark) {
+    const html = document.documentElement;
+    if (isDark) {
+      html.classList.add('dark');
+    } else {
+      html.classList.remove('dark');
+    }
+    localStorage.setItem('chuanci-theme', isDark ? 'dark' : 'light');
+    // 同步两个图标
+    const iconHtml = isDark
+      ? '<i class="fa-solid fa-sun text-amber-400"></i>'
+      : '<i class="fa-solid fa-moon text-indigo-600"></i>';
+    document.getElementById('themeIcon').innerHTML = iconHtml;
+    document.getElementById('themeIconMobile').innerHTML = iconHtml;
+  }
+
+  function initTheme() {
+    const saved = localStorage.getItem('chuanci-theme');
+    // 未设置过时跟随系统偏好
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(saved ? saved === 'dark' : prefersDark);
+  }
+
+  function toggleTheme() {
+    applyTheme(!document.documentElement.classList.contains('dark'));
+  }
+
+  /* ============================================================
+   * 事件绑定
+   * ============================================================ */
+  function bindEvents() {
+    // 主题切换（桌面 + 移动）
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    document.getElementById('themeToggleMobile').addEventListener('click', toggleTheme);
+
+    // 汉堡菜单
+    const menuBtn = document.getElementById('menuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const menuIcon = document.getElementById('menuIcon');
+    menuBtn.addEventListener('click', () => {
+      const isOpen = !mobileMenu.classList.contains('hidden');
+      mobileMenu.classList.toggle('hidden', isOpen);
+      menuIcon.className = isOpen ? 'fa-solid fa-bars text-slate-600 dark:text-slate-300' : 'fa-solid fa-xmark text-slate-600 dark:text-slate-300';
+    });
+
+    // 搜索（桌面 + 移动，实时同步）
+    const inputs = [document.getElementById('searchInput'), document.getElementById('searchInputMobile')];
+    inputs.forEach(input => {
+      input.addEventListener('input', (e) => {
+        state.keyword = e.target.value;
+        inputs.forEach(i => { if (i !== e.target) i.value = e.target.value; });
+        renderCards();
+      });
+    });
+
+    // 排序按钮
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.sort = btn.dataset.sort;
+        updateSortButtons();
+        renderCards();
+      });
+    });
+
+    // 回到顶部
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+      backToTop.classList.toggle('hidden-btn', window.scrollY < 300);
+    });
+    backToTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  /* ============================================================
+   * 数据加载（预留 API 对接）
+   * ============================================================ */
+  async function loadData() {
+    if (CONFIG.useApi && CONFIG.apiEndpoint) {
+      try {
+        const res = await fetch(CONFIG.apiEndpoint);
+        const json = await res.json();
+        // 兼容 { data: [...] } 或直接数组
+        state.data = Array.isArray(json) ? json : (json.data || QUOTES);
+      } catch (e) {
+        console.warn('API 加载失败，回退到本地数据', e);
+        state.data = QUOTES;
+      }
+    } else {
+      state.data = QUOTES;
+    }
+  }
+
+  /* ============================================================
+   * 初始化入口
+   * ============================================================ */
+  async function init() {
+    initTheme();
+    await loadData();
+    renderStats();
+    renderCategories();
+    renderCards();
+    updateSortButtons();
+    bindEvents();
+  }
+
+  init();
+  </script>
+</body>
+</html>
