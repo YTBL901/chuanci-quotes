@@ -255,10 +255,11 @@
    * 后续接入爬虫时，将 useApi 改为 true 并填写 apiEndpoint 即可
    * ============================================================ */
   const CONFIG = {
-    useApi: false,
-    apiEndpoint: '',          // 例如：'https://api.example.com/quotes'
-    today: '2026-11-25',      // 用于计算「今日新增」，实际部署可改为 new Date() 自动获取
-  };
+  useApi: true,                              // 原 false 改 true
+  apiEndpoint: './quotes.json',              // 原空字符串填这个
+  today: new Date().toISOString().slice(0,10) // 原固定日期改这个
+};
+
 
   /* ============================================================
    * 内置数据：24 条示例语录
