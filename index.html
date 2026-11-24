@@ -54,6 +54,26 @@
       box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
     }
 
+    /* ---- 来源标签选中态（较柔和的描边风格） ---- */
+    .source-active {
+      background: #eef2ff !important;
+      color: #4f46e5 !important;
+      border-color: #a5b4fc !important;
+    }
+    .dark .source-active {
+      background: #312e81 !important;
+      color: #c7d2fe !important;
+      border-color: #6366f1 !important;
+    }
+
+    /* ---- 只看热门开关选中态（暖色系区分） ---- */
+    .hot-toggle.active {
+      background: linear-gradient(135deg, #f43f5e, #e11d48) !important;
+      color: #fff !important;
+      border-color: transparent !important;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+    }
+
     /* ---- Toast 轻提示动画 ---- */
     #toast {
       transition: opacity 0.3s, transform 0.3s;
@@ -181,17 +201,32 @@
     <!-- 分类筛选 + 排序控制 -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 dark:border-slate-700 mb-6 transition-colors duration-300">
       <!-- 分类标签 -->
-      <div class="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar pb-1" id="categoryBar">
+      <div class="flex items-center gap-2 mb-3 overflow-x-auto no-scrollbar pb-1" id="categoryBar">
+        <!-- 由 JS 动态渲染 -->
+      </div>
+      <!-- 来源平台标签 -->
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="sourceBar">
         <!-- 由 JS 动态渲染 -->
       </div>
       <!-- 排序与结果数 -->
-      <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-slate-100 dark:border-slate-700">
         <div class="text-xs text-slate-500 dark:text-slate-400">
           共找到 <span id="resultCount" class="font-bold text-indigo-600 dark:text-indigo-400">0</span> 条语录
         </div>
-        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
-          <button data-sort="time" class="sort-btn px-3 py-1.5 text-xs rounded-md transition-all duration-300">最新收录</button>
-          <button data-sort="hot" class="sort-btn px-3 py-1.5 text-xs rounded-md transition-all duration-300">热度优先</button>
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- 只看热门开关 -->
+          <button id="hotToggle" class="hot-toggle flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all duration-300">
+            <i class="fa-solid fa-fire"></i> 只看热门
+          </button>
+          <!-- 重置筛选 -->
+          <button id="resetFilter" class="hidden flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-indigo-300 dark:hover:border-indigo-500 transition-all duration-300">
+            <i class="fa-solid fa-rotate-left"></i> 重置
+          </button>
+          <!-- 排序切换 -->
+          <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+            <button data-sort="time" class="sort-btn px-3 py-1.5 text-xs rounded-md transition-all duration-300">最新收录</button>
+            <button data-sort="hot" class="sort-btn px-3 py-1.5 text-xs rounded-md transition-all duration-300">热度优先</button>
+          </div>
         </div>
       </div>
     </div>
@@ -255,11 +290,11 @@
    * 后续接入爬虫时，将 useApi 改为 true 并填写 apiEndpoint 即可
    * ============================================================ */
   const CONFIG = {
-  useApi: true,                              // 原 false 改 true
-  apiEndpoint: './quotes.json',              // 原空字符串填这个
-  today: new Date().toISOString().slice(0,10) // 原固定日期改这个
-};
-
+    useApi: true,                              // 已开启：从 quotes.json 读取爬虫数据
+    apiEndpoint: './quotes.json',              // 数据文件（与 crawler.py 输出一致）
+    // 北京时间日期（UTC+8），与爬虫保持一致，「今日新增」统计才准确
+    today: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10),
+  };
 
   /* ============================================================
    * 内置数据：24 条示例语录
@@ -306,9 +341,11 @@
    * ============================================================ */
   let state = {
     data: QUOTES,
-    category: '全部',
+    category: '全部',   // 分类筛选
+    source: '全部',     // 来源平台筛选
     sort: 'time',       // 'time' | 'hot'
     keyword: '',
+    onlyHot: false,     // 是否只看热门
   };
 
   /* ============================================================
@@ -394,6 +431,35 @@
     });
   }
 
+  // 渲染来源平台标签（来源从实际数据动态提取，新增来源自动出现）
+  function renderSources() {
+    const bar = document.getElementById('sourceBar');
+    // 统计每个来源的数量，按数量降序排列
+    const counts = {};
+    state.data.forEach(q => { counts[q.source] = (counts[q.source] || 0) + 1; });
+    const sources = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    const all = ['全部', ...sources];
+
+    bar.innerHTML = all.map(src => {
+      const active = state.source === src;
+      const label = src === '全部' ? '全部来源' : `${escapeHtml(src)} <span class="opacity-60">(${counts[src]})</span>`;
+      return `<button data-source="${escapeHtml(src)}"
+        class="source-btn flex-shrink-0 px-3 py-1 rounded-full text-xs border transition-all duration-300 ${
+          active
+            ? 'source-active'
+            : 'bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-indigo-300 dark:hover:border-indigo-500'
+        }">${label}</button>`;
+    }).join('');
+
+    bar.querySelectorAll('.source-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.source = btn.dataset.source;
+        renderSources();
+        renderCards();
+      });
+    });
+  }
+
   // 根据筛选/搜索/排序获取当前展示的数据
   function getFilteredData() {
     let list = [...state.data];
@@ -401,6 +467,14 @@
     // 分类筛选
     if (state.category !== '全部') {
       list = list.filter(q => q.category === state.category);
+    }
+    // 来源平台筛选
+    if (state.source !== '全部') {
+      list = list.filter(q => q.source === state.source);
+    }
+    // 只看热门
+    if (state.onlyHot) {
+      list = list.filter(q => q.hot === true);
     }
     // 关键词搜索（正文、分类、来源）
     if (state.keyword.trim()) {
@@ -420,6 +494,13 @@
     return list;
   }
 
+  // 更新「重置」按钮显隐（有任意筛选条件时显示）
+  function updateResetButton() {
+    const active = state.category !== '全部' || state.source !== '全部' ||
+                   state.onlyHot || state.keyword.trim() !== '';
+    document.getElementById('resetFilter').classList.toggle('hidden', !active);
+  }
+
   // 渲染语录卡片
   function renderCards() {
     const grid = document.getElementById('cardsGrid');
@@ -427,6 +508,7 @@
     const list = getFilteredData();
 
     document.getElementById('resultCount').textContent = list.length;
+    updateResetButton();
 
     if (list.length === 0) {
       grid.innerHTML = '';
@@ -560,6 +642,34 @@
       });
     });
 
+    // 只看热门开关
+    const hotToggle = document.getElementById('hotToggle');
+    hotToggle.addEventListener('click', () => {
+      state.onlyHot = !state.onlyHot;
+      hotToggle.classList.toggle('active', state.onlyHot);
+      hotToggle.innerHTML = state.onlyHot
+        ? '<i class="fa-solid fa-fire"></i> 只看热门 ✓'
+        : '<i class="fa-solid fa-fire"></i> 只看热门';
+      updateResetButton();
+      renderCards();
+    });
+
+    // 重置筛选
+    document.getElementById('resetFilter').addEventListener('click', () => {
+      state.category = '全部';
+      state.source = '全部';
+      state.onlyHot = false;
+      state.keyword = '';
+      document.getElementById('searchInput').value = '';
+      document.getElementById('searchInputMobile').value = '';
+      hotToggle.classList.remove('active');
+      hotToggle.innerHTML = '<i class="fa-solid fa-fire"></i> 只看热门';
+      renderCategories();
+      renderSources();
+      updateResetButton();
+      renderCards();
+    });
+
     // 回到顶部
     const backToTop = document.getElementById('backToTop');
     window.addEventListener('scroll', () => {
@@ -597,6 +707,7 @@
     await loadData();
     renderStats();
     renderCategories();
+    renderSources();
     renderCards();
     updateSortButtons();
     bindEvents();
